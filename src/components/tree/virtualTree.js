@@ -116,10 +116,11 @@ export class VirtualTree {
         }
       }
     } else {
-      // Search: show matching nodes + all their ancestors (auto-expanded)
-      // Step 1: find all matching node ids
+      // Search: show matching nodes + ancestors + manually expanded children of matches
       const matchIds = new Set();
       const ancestorIds = new Set();
+      const nodeMap = new Map();
+      for (const n of all) nodeMap.set(n.id, n);
 
       for (const node of all) {
         const keyMatch = String(node.key).toLowerCase().includes(q);
@@ -130,60 +131,55 @@ export class VirtualTree {
           // Mark all ancestors
           let pid = node.parentId;
           while (pid !== null && pid !== undefined) {
+            if (ancestorIds.has(pid)) break;
             ancestorIds.add(pid);
-            const parent = all.find((n) => n.id === pid);
+            const parent = nodeMap.get(pid);
             pid = parent ? parent.parentId : null;
           }
         }
       }
 
-      // Step 2: build visible list — include ancestors + matching nodes
-      //         collapse non-ancestor containers that aren't expanded
       this.visibleNodes = [];
-      const skipDepth = [];
-      const parentIsExpandedAtDepth = new Set();
+      const nodeInfo = new Map(); // id -> { isVisible, isExpanded, isDescendantOfMatch, isAncestor }
 
-      for (let i = 0; i < all.length; i++) {
-        const node = all[i];
-
-        // Pop stale skip markers
-        while (
-          skipDepth.length > 0 &&
-          node.depth <= skipDepth[skipDepth.length - 1]
-        ) {
-          const removedDepth = skipDepth.pop();
-          parentIsExpandedAtDepth.delete(removedDepth);
-        }
-
-        if (
-          skipDepth.length > 0 &&
-          node.depth > skipDepth[skipDepth.length - 1]
-        ) {
-          continue;
-        }
-
-        const isAncestor = ancestorIds.has(node.id);
+      for (const node of all) {
         const isMatch = matchIds.has(node.id);
-        const isChildOfExpanded = parentIsExpandedAtDepth.has(node.depth - 1);
+        const isAncestor = ancestorIds.has(node.id);
 
-        const isVisible = isAncestor || isMatch || isChildOfExpanded;
+        let isVisible = false;
+        let isDescendantOfMatch = false;
+        let isExpanded = false;
 
-        if (!isVisible) {
-          if (!node.isLeaf) skipDepth.push(node.depth);
-          continue;
+        if (node.parentId === null) {
+          isVisible = isMatch || isAncestor;
+        } else {
+          const pInfo = nodeInfo.get(node.parentId);
+          if (pInfo && pInfo.isVisible && pInfo.isExpanded) {
+            if (pInfo.isMatch || pInfo.isDescendantOfMatch) {
+              isVisible = true;
+              isDescendantOfMatch = true;
+            } else if (pInfo.isAncestor) {
+              if (isMatch || isAncestor) {
+                isVisible = true;
+              }
+            }
+          }
         }
 
-        const isExpanded =
-          expanded.has(node.id) || (isAncestor && !node.isLeaf);
-
-        this.visibleNodes.push({ ...node, isExpanded, isSearchMatch: isMatch });
-
-        if (!node.isLeaf) {
-          if (isExpanded) {
-            parentIsExpandedAtDepth.add(node.depth);
-          } else {
-            skipDepth.push(node.depth);
-          }
+        if (isVisible) {
+          isExpanded = expanded.has(node.id) || (isAncestor && !node.isLeaf);
+          nodeInfo.set(node.id, {
+            isVisible,
+            isExpanded,
+            isDescendantOfMatch,
+            isAncestor,
+            isMatch,
+          });
+          this.visibleNodes.push({
+            ...node,
+            isExpanded,
+            isSearchMatch: isMatch,
+          });
         }
       }
     }
