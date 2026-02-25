@@ -337,15 +337,32 @@
 
       // ── State subscription ───────────────────────────────────────────────────────
       subscribe((state) => {
+        const schemaTab = document.querySelector('.app-tab[data-tab="schema"]');
         if (state.json !== null) {
           showTreePanel();
+          if (schemaTab) {
+            schemaTab.style.opacity = "1";
+            schemaTab.style.pointerEvents = "auto";
+            schemaTab.style.cursor = "pointer";
+            schemaTab.title = "";
+          }
         } else {
           showDropZone();
+          if (schemaTab) {
+            schemaTab.style.opacity = "0.4";
+            schemaTab.style.pointerEvents = "none";
+            schemaTab.style.cursor = "not-allowed";
+            schemaTab.title = "Load JSON to enable Schema view";
+          }
         }
       });
 
       // ── Tab switching ────────────────────────────────────────────────────────────
       function switchTab(tab) {
+        if (tab === "schema") {
+          const { json } = getState();
+          if (json === null) return;
+        }
         currentTab = tab;
         document.querySelectorAll(".app-tab").forEach((t) => {
           t.classList.toggle("active", t.dataset.tab === tab);
