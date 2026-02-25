@@ -452,6 +452,7 @@ kbd {
   max-width: 380px;
   color: var(--text-dim);
   font-size: 0.75rem;
+  padding: 0 45px;
 }
 .drop-divider::before,
 .drop-divider::after {
@@ -485,7 +486,11 @@ kbd {
 .drop-parse-row {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  padding: 10px 45px;
 }
 #error-msg {
   color: var(--bool);
@@ -1159,7 +1164,8 @@ kbd {
   .nav-links {
     display: none;
   }
-  .nav-cta .btn-ghost {
+  .nav-cta .btn-ghost,
+  .nav-cta .btn-primary {
     display: none;
   }
   .ham-btn {
@@ -1222,6 +1228,17 @@ kbd {
     border-left: 1px solid var(--border);
     box-shadow: -8px 0 40px hsla(222, 47%, 0%, 0.6);
     overflow-y: auto;
+    display: block;
+  }
+  .right-panel .value-display,
+  .right-panel .schema-output,
+  .right-panel .value-content {
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+  .right-panel .schema-panel {
+    display: block;
+    overflow: visible;
   }
   .right-panel.open {
     transform: translateX(0);
@@ -1264,6 +1281,13 @@ kbd {
   .features-h2 {
     font-size: 1.8rem;
   }
+
+  .drop-parse-row button {
+    width: fit-content;
+  }
+  .paste-area {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 464px) {
@@ -1283,5 +1307,9 @@ kbd {
   }
   .icon-btn {
     padding: 6px 8px;
+  }
+
+  .paste-area {
+    max-width: 75%;
   }
 }
