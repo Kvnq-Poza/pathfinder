@@ -552,10 +552,10 @@
         _schemaText = generateSchema(node.value, schemaName);
         renderSchema(_schemaText);
 
-        // On mobile: auto-open drawer
-        if (window.innerWidth <= 768) {
-          openPanel();
-        }
+        // On mobile: auto-open drawer - some users might find this intrusive, so, commented out for now
+        // if (window.innerWidth <= 768) {
+        //   openPanel();
+        // }
       }
 
       function pascal(str) {
