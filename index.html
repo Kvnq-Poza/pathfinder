@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PathFinder — Visual JSON Explorer</title>
+    <meta
+      name="description"
+      content="Zero-dependency, high-performance visual tool for mapping, querying, and generating access logic for deeply nested JSON structures."
+    />
+    <link rel="icon" href="public/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="src/styles/variables.css" />
+    <link rel="stylesheet" href="src/styles/global.css" />
+    <link rel="stylesheet" href="src/styles/components.css" />
+  </head>
+  <body>
+    <!-- ===== NAV ===== -->
+    <nav class="site-nav">
+      <a href="index.html" class="nav-logo">
+        <div class="logo-mark"><i class="fa-solid fa-diagram-project"></i></div>
+        PathFinder
+      </a>
+      <ul class="nav-links">
+        <li>
+          <a href="#features"
+            ><i class="fa-solid fa-bolt fa-xs"></i> Features</a
+          >
+        </li>
+        <li>
+          <a href="tool.html"><i class="fa-solid fa-wrench fa-xs"></i> Tool</a>
+        </li>
+        <li>
+          <a href="https://github.com" target="_blank" rel="noopener"
+            ><i class="fa-brands fa-github fa-xs"></i> GitHub</a
+          >
+        </li>
+        <li>
+          <a href="https://js.org" target="_blank" rel="noopener">JS.ORG</a>
+        </li>
+      </ul>
+      <div class="nav-cta">
+        <button class="btn-ghost" onclick="window.location.href = 'tool.html'">
+          <i class="fa-solid fa-code"></i> View Docs
+        </button>
+        <button
+          class="btn-primary"
+          onclick="window.location.href = 'tool.html'"
+        >
+          Launch Tool <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <button
+          class="ham-btn"
+          id="ham-btn"
+          aria-label="Menu"
+          onclick="toggleMobileMenu()"
+        >
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#features">Features</a>
+      <a href="tool.html">Tool</a>
+      <a href="https://github.com" target="_blank">GitHub</a>
+      <a href="https://js.org" target="_blank">JS.ORG</a>
+      <button
+        onclick="window.location.href = 'tool.html'"
+        class="btn-primary"
+        style="margin-top: 8px; width: 100%; justify-content: center"
+      >
+        <i class="fa-solid fa-rocket"></i> Launch Tool
+      </button>
+    </div>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-badge" style="animation: fadeUp 0.5s ease both">
+          <div class="badge-dot"></div>
+          Zero Dependencies &middot; 100% Client-Side
+        </div>
+        <h1 class="hero-h1">
+          Stop Guessing<br /><span>Your JSON Paths.</span>
+        </h1>
+        <p class="hero-sub" style="animation: fadeUp 0.6s 0.2s ease both">
+          The high-performance visual explorer for massive nested objects.
+          Navigate, query, and generate clean JavaScript access logic in
+          seconds.
+        </p>
+        <div class="hero-actions" style="animation: fadeUp 0.6s 0.3s ease both">
+          <button
+            class="btn-launch"
+            onclick="window.location.href = 'tool.html'"
+          >
+            <i class="fa-solid fa-rocket"></i> Launch Tool
+          </button>
+          <button
+            class="btn-ghost"
+            onclick="
+              document
+                .getElementById('features')
+                .scrollIntoView({ behavior: 'smooth' })
+            "
+          >
+            <i class="fa-solid fa-circle-info"></i> Features
+          </button>
+        </div>
+        <div class="hero-stats" style="animation: fadeUp 0.6s 0.4s ease both">
+          <div class="stat">
+            <div class="stat-val">&lt;50kb</div>
+            <div class="stat-label">Gzipped Bundle</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">60fps</div>
+            <div class="stat-label">Virtual Scroll</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">10MB+</div>
+            <div class="stat-label">File Support</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">0</div>
+            <div class="stat-label">Dependencies</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <!-- Interactive mini tree demo -->
+        <div class="mini-tree" style="animation: fadeUp 0.6s 0.15s ease both">
+          <div class="mini-tree-bar">
+            <div class="tbar-dot tbar-dot-r"></div>
+            <div class="tbar-dot tbar-dot-y"></div>
+            <div class="tbar-dot tbar-dot-g"></div>
+            <div class="mini-tree-title">
+              <i class="fa-solid fa-file-code fa-xs"></i>&nbsp;
+              api-response.json
+            </div>
+          </div>
+          <div class="mini-tree-body">
+            <div class="path-output">
+              <span
+                class="path-text"
+                id="demo-path-text"
+                style="color: var(--text-dim); font-style: italic"
+              >
+                <i class="fa-solid fa-hand-pointer fa-xs"></i>&nbsp; Click a
+                node to generate path
+              </span>
+              <button
+                class="copy-mini"
+                id="demo-copy-btn"
+                onclick="copyDemoPath()"
+                style="display: none"
+              >
+                <i class="fa-regular fa-copy"></i> copy
+              </button>
+            </div>
+
+            <!-- Root -->
+            <div
+              class="demo-node"
+              id="dn-root"
+              onclick="demoToggle('root', this)"
+            >
+              <i class="fa-solid fa-chevron-right demo-arrow" id="arr-root"></i>
+              <span style="color: var(--key)">"root"</span>
+              <span style="color: var(--text-dim)">:&nbsp;{…}&nbsp;</span>
+              <span style="color: var(--text-dim); font-size: 0.65rem"
+                >5 keys</span
+              >
+            </div>
+            <div id="demo-children" style="display: none">
+              <!-- user -->
+              <div
+                class="demo-node"
+                id="dn-user"
+                style="padding-left: 20px"
+                onclick="demoToggle('user', this)"
+              >
+                <i
+                  class="fa-solid fa-chevron-right demo-arrow"
+                  id="arr-user"
+                ></i>
+                <span style="color: var(--key)">"user"</span>
+                <span style="color: var(--text-dim)">:&nbsp;{…}&nbsp;</span>
+                <span style="color: var(--text-dim); font-size: 0.65rem"
+                  >3 keys</span
+                >
+              </div>
+              <div id="demo-user-ch" style="display: none">
+                <div
+                  class="demo-node"
+                  style="padding-left: 36px"
+                  onclick="demoLeaf('root?.user?.id', this)"
+                >
+                  <i
+                    class="fa-solid fa-chevron-right demo-arrow leaf"
+                    style="opacity: 0"
+                  ></i>
+                  <span style="color: var(--key)">"id"</span
+                  ><span style="color: var(--text-dim)">:&nbsp;</span
+                  ><span style="color: var(--num)">42</span>
+                </div>
+                <div
+                  class="demo-node"
+                  style="padding-left: 36px"
+                  onclick="demoLeaf('root?.user?.name', this)"
+                >
+                  <i
+                    class="fa-solid fa-chevron-right demo-arrow leaf"
+                    style="opacity: 0"
+                  ></i>
+                  <span style="color: var(--key)">"name"</span
+                  ><span style="color: var(--text-dim)">:&nbsp;</span
+                  ><span style="color: var(--str)">"Alice"</span>
+                </div>
+                <div
+                  class="demo-node"
+                  style="padding-left: 36px"
+                  onclick="demoLeaf('root?.user?.role', this)"
+                >
+                  <i
+                    class="fa-solid fa-chevron-right demo-arrow leaf"
+                    style="opacity: 0"
+                  ></i>
+                  <span style="color: var(--key)">"role"</span
+                  ><span style="color: var(--text-dim)">:&nbsp;</span
+                  ><span style="color: var(--str)">"admin"</span>
+                </div>
+              </div>
+              <!-- tags -->
+              <div
+                class="demo-node"
+                id="dn-tags"
+                style="padding-left: 20px"
+                onclick="demoToggle('tags', this)"
+              >
+                <i
+                  class="fa-solid fa-chevron-right demo-arrow"
+                  id="arr-tags"
+                ></i>
+                <span style="color: var(--key)">"tags"</span>
+                <span style="color: var(--text-dim)">:&nbsp;[…]&nbsp;</span>
+                <span style="color: var(--text-dim); font-size: 0.65rem"
+                  >3 items</span
+                >
+              </div>
+              <div id="demo-tags-ch" style="display: none">
+                <div
+                  class="demo-node"
+                  style="padding-left: 36px"
+                  onclick="demoLeaf('root?.tags?.[0]', this)"
+                >
+                  <i
+                    class="fa-solid fa-chevron-right demo-arrow leaf"
+                    style="opacity: 0"
+                  ></i>
+                  <span style="color: var(--key)">0</span
+                  ><span style="color: var(--text-dim)">:&nbsp;</span
+                  ><span style="color: var(--str)">"json"</span>
+                </div>
+                <div
+                  class="demo-node"
+                  style="padding-left: 36px"
+                  onclick="demoLeaf('root?.tags?.[1]', this)"
+                >
+                  <i
+                    class="fa-solid fa-chevron-right demo-arrow leaf"
+                    style="opacity: 0"
+                  ></i>
+                  <span style="color: var(--key)">1</span
+                  ><span style="color: var(--text-dim)">:&nbsp;</span
+                  ><span style="color: var(--str)">"parser"</span>
+                </div>
+              </div>
+              <!-- version -->
+              <div
+                class="demo-node"
+                style="padding-left: 20px"
+                onclick="demoLeaf('root?.version', this)"
+              >
+                <i
+                  class="fa-solid fa-chevron-right demo-arrow leaf"
+                  style="opacity: 0"
+                ></i>
+                <span style="color: var(--key)">"version"</span
+                ><span style="color: var(--text-dim)">:&nbsp;</span
+                ><span style="color: var(--str)">"2.1.0"</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FEATURES ===== -->
+    <section id="features" class="features">
+      <div class="section-label">
+        <i class="fa-solid fa-microchip"></i> core_features
+      </div>
+      <h2 class="features-h2">Everything you need to tame complex JSON.</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-sitemap"></i></div>
+          <div class="feature-title">Virtual Tree Engine</div>
+          <p class="feature-desc">
+            Renders only visible rows. 100,000+ nodes at a constant 60fps,
+            regardless of depth or breadth.
+          </p>
+          <div class="feature-mono">O(1) render · row height = 30px</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-code-branch"></i>
+          </div>
+          <div class="feature-title">Multi-format Path Gen</div>
+          <p class="feature-desc">
+            One click generates Optional Chaining, JSONPath, Lodash-style, and
+            destructuring accessors with special character escaping.
+          </p>
+          <div class="feature-mono">obj?.user?.['my-key']?.[0]</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="feature-title">Privacy by Design</div>
+          <p class="feature-desc">
+            Zero telemetry. Zero cloud. Your JSON stays in your browser's memory
+            only. No server ever sees it.
+          </p>
+          <div class="feature-mono">network: 0 · telemetry: 0</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <div class="feature-title">Live Search &amp; Filter</div>
+          <p class="feature-desc">
+            Instant search across all keys and values. Highlights matching nodes
+            and auto-expands parent paths to reveal results.
+          </p>
+          <div class="feature-mono">Ctrl+F to focus search</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-brands fa-js"></i></div>
+          <div class="feature-title">TypeScript Schema</div>
+          <p class="feature-desc">
+            Infers full TypeScript interface definitions from your JSON,
+            handling union types, nested objects, and heterogeneous arrays.
+          </p>
+          <div class="feature-mono">
+            interface Root &#123; id: string; … &#125;
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fa-solid fa-file-arrow-up"></i>
+          </div>
+          <div class="feature-title">Drag &amp; Drop Upload</div>
+          <p class="feature-desc">
+            Drop any .json file up to 10MB+ directly into the browser. State
+            persists across page reloads via sessionStorage.
+          </p>
+          <div class="feature-mono">persisted via sessionStorage</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="site-footer">
+      <span
+        ><i class="fa-solid fa-terminal fa-xs"></i> PathFinder &copy;
+        <span id="footer-year"></span> &mdash; Zero Dependencies &mdash; Open
+        Source</span
+      >
+      <span>
+        Hosted on
+        <a href="https://pages.github.com" target="_blank">GitHub Pages</a>
+        &nbsp;|&nbsp; Part of the
+        <a href="https://js.org" target="_blank">JS.ORG</a> ecosystem
+      </span>
+    </footer>
+
+    <div id="toast"><i class="fa-solid fa-check"></i> Copied!</div>
+
+    <script>
+      // Dynamic footer year
+      document.getElementById("footer-year").textContent =
+        new Date().getFullYear();
+
+      // Mobile menu
+      function toggleMobileMenu() {
+        const m = document.getElementById("mobile-menu");
+        m.classList.toggle("open");
+      }
+      // Close menu on outside click
+      document.addEventListener("click", (e) => {
+        if (
+          !e.target.closest("#mobile-menu") &&
+          !e.target.closest("#ham-btn")
+        ) {
+          document.getElementById("mobile-menu").classList.remove("open");
+        }
+      });
+
+      // Demo tree state
+      const demoExpanded = { root: false, user: false, tags: false };
+      const childMap = {
+        root: "demo-children",
+        user: "demo-user-ch",
+        tags: "demo-tags-ch",
+      };
+      const arrowMap = { root: "arr-root", user: "arr-user", tags: "arr-tags" };
+
+      function demoToggle(id, el) {
+        demoExpanded[id] = !demoExpanded[id];
+        document.getElementById(childMap[id]).style.display = demoExpanded[id]
+          ? "block"
+          : "none";
+        const arr = document.getElementById(arrowMap[id]);
+        if (arr)
+          arr.className =
+            "fa-solid fa-chevron-right demo-arrow" +
+            (demoExpanded[id] ? " open" : "");
+        highlightDemo(el);
+        // Also show path for container
+        const paths = { root: "root", user: "root?.user", tags: "root?.tags" };
+        setDemoPath(paths[id]);
+      }
+
+      function demoLeaf(path, el) {
+        highlightDemo(el);
+        setDemoPath(path);
+      }
+
+      function highlightDemo(el) {
+        document
+          .querySelectorAll(".demo-node")
+          .forEach((n) => n.classList.remove("active"));
+        el.classList.add("active");
+      }
+
+      function setDemoPath(path) {
+        const t = document.getElementById("demo-path-text");
+        t.style.fontStyle = "normal";
+        t.style.color = "var(--accent)";
+        t.innerHTML = path;
+        document.getElementById("demo-copy-btn").style.display = "inline-flex";
+      }
+
+      function copyDemoPath() {
+        const text = document.getElementById("demo-path-text").textContent;
+        navigator.clipboard
+          .writeText(text)
+          .then(() => showToast("Path copied!"));
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.innerHTML = '<i class="fa-solid fa-check"></i> ' + msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2000);
+      }
+    </script>
+  </body>
+</html>
