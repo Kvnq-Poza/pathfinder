@@ -141,6 +141,7 @@ export class VirtualTree {
       //         collapse non-ancestor containers that aren't expanded
       this.visibleNodes = [];
       const skipDepth = [];
+      const parentIsExpandedAtDepth = new Set();
 
       for (let i = 0; i < all.length; i++) {
         const node = all[i];
@@ -150,7 +151,8 @@ export class VirtualTree {
           skipDepth.length > 0 &&
           node.depth <= skipDepth[skipDepth.length - 1]
         ) {
-          skipDepth.pop();
+          const removedDepth = skipDepth.pop();
+          parentIsExpandedAtDepth.delete(removedDepth);
         }
 
         if (
@@ -162,19 +164,26 @@ export class VirtualTree {
 
         const isAncestor = ancestorIds.has(node.id);
         const isMatch = matchIds.has(node.id);
-        const isExpanded =
-          expanded.has(node.id) || (isAncestor && !node.isLeaf);
+        const isChildOfExpanded = parentIsExpandedAtDepth.has(node.depth - 1);
 
-        if (!isAncestor && !isMatch) {
-          // Not relevant — skip its subtree too
+        const isVisible = isAncestor || isMatch || isChildOfExpanded;
+
+        if (!isVisible) {
           if (!node.isLeaf) skipDepth.push(node.depth);
           continue;
         }
 
+        const isExpanded =
+          expanded.has(node.id) || (isAncestor && !node.isLeaf);
+
         this.visibleNodes.push({ ...node, isExpanded, isSearchMatch: isMatch });
 
-        if (!node.isLeaf && !isExpanded) {
-          skipDepth.push(node.depth);
+        if (!node.isLeaf) {
+          if (isExpanded) {
+            parentIsExpandedAtDepth.add(node.depth);
+          } else {
+            skipDepth.push(node.depth);
+          }
         }
       }
     }
