@@ -48,10 +48,10 @@
       </a>
 
       <div class="app-tabs" id="app-tabs">
-        <div class="app-tab active" data-tab="tree" onclick="switchTab('tree')">
+        <div class="app-tab active" data-tab="tree">
           <i class="fa-solid fa-sitemap fa-xs"></i> Tree
         </div>
-        <div class="app-tab" data-tab="schema" onclick="switchTab('schema')">
+        <div class="app-tab" data-tab="schema">
           <i class="fa-brands fa-js fa-xs"></i> Schema
         </div>
       </div>
@@ -61,16 +61,11 @@
           <span class="shortcut"><kbd>Ctrl+F</kbd> search</span>
           <span class="shortcut"><kbd>Ctrl+/</kbd> collapse</span>
         </div>
-        <button
-          class="icon-btn"
-          id="file-trigger-btn"
-          onclick="triggerFile()"
-          title="Load JSON file"
-        >
+        <button class="icon-btn" id="file-trigger-btn" title="Load JSON file">
           <i class="fa-solid fa-folder-open"></i>
           <span class="label">File</span>
         </button>
-        <button class="icon-btn danger" onclick="clearAll()" title="Clear JSON">
+        <button class="icon-btn danger" id="clear-btn" title="Clear JSON">
           <i class="fa-solid fa-xmark"></i> <span class="label">Clear</span>
         </button>
       </div>
@@ -79,13 +74,7 @@
     <!-- ===== APP LAYOUT ===== -->
     <div class="app-layout" id="app-layout">
       <!-- DROP / LOAD ZONE (shown when no JSON) -->
-      <div
-        id="drop-zone"
-        ondragover="onDragOver(event)"
-        ondragleave="onDragLeave(event)"
-        ondrop="onDrop(event)"
-        onclick="handleDropZoneClick(event)"
-      >
+      <div id="drop-zone">
         <div class="drop-icon"><i class="fa-solid fa-file-code"></i></div>
         <div class="drop-title">Drop a JSON file here</div>
         <div class="drop-sub">
@@ -96,17 +85,14 @@
           class="paste-area"
           id="paste-area"
           placeholder='{"user": {"id": 1, "name": "Alice"}, "tags": ["json", "parser"]}'
-          onclick="event.stopPropagation()"
-          onkeydown="event.stopPropagation()"
-          oninput="clearError()"
         >
         </textarea>
         <div id="error-msg"></div>
-        <div class="drop-parse-row" onclick="event.stopPropagation()">
-          <button class="btn-primary" onclick="parsePaste()">
+        <div class="drop-parse-row">
+          <button class="btn-primary" id="parse-btn">
             <i class="fa-solid fa-play"></i> Parse JSON
           </button>
-          <button class="btn-ghost" onclick="loadSample()">
+          <button class="btn-ghost" id="load-sample-btn">
             <i class="fa-solid fa-flask"></i> Load Sample
           </button>
         </div>
@@ -122,32 +108,18 @@
               class="search-input"
               id="search-input"
               placeholder="Search keys and values…"
-              oninput="onSearch(this.value)"
               autocomplete="off"
               spellcheck="false"
             />
-            <button
-              class="search-clear"
-              id="search-clear"
-              onclick="clearSearch()"
-              title="Clear search"
-            >
+            <button class="search-clear" id="search-clear" title="Clear search">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
           <span class="tree-info" id="tree-info">—</span>
-          <button
-            class="icon-btn"
-            onclick="tree && tree.collapseAll()"
-            title="Collapse all"
-          >
+          <button class="icon-btn" id="collapse-all-btn" title="Collapse all">
             <i class="fa-solid fa-compress"></i>
           </button>
-          <button
-            class="icon-btn"
-            onclick="tree && tree.expandAll()"
-            title="Expand all"
-          >
+          <button class="icon-btn" id="expand-all-btn" title="Expand all">
             <i class="fa-solid fa-expand"></i>
           </button>
         </div>
@@ -171,12 +143,7 @@
               Load JSON to generate interface definitions
             </div>
           </div>
-          <button
-            class="btn-ghost"
-            onclick="copySchema()"
-            id="copy-schema-btn"
-            disabled
-          >
+          <button class="btn-ghost" id="copy-schema-btn" disabled>
             <i class="fa-regular fa-copy"></i> Copy Schema
           </button>
         </div>
@@ -217,7 +184,7 @@
         <div class="schema-panel" id="sidebar-schema-panel">
           <div class="panel-header">
             <span><i class="fa-brands fa-js fa-xs"></i> typescript_schema</span>
-            <button class="copy-mini" onclick="copySchema()">
+            <button class="copy-mini">
               <i class="fa-regular fa-copy"></i> copy
             </button>
           </div>
@@ -235,568 +202,20 @@
     <button
       class="panel-toggle"
       id="panel-toggle"
-      onclick="togglePanel()"
       title="View paths &amp; schema"
     >
       <i class="fa-solid fa-code"></i>
     </button>
-    <div
-      class="drawer-overlay"
-      id="drawer-overlay"
-      onclick="closePanel()"
-    ></div>
+    <div class="drawer-overlay" id="drawer-overlay"></div>
 
     <input
       type="file"
       id="file-input"
       style="display: none"
       accept=".json,application/json"
-      onchange="handleFileInput(this)"
     />
     <div id="toast"><i class="fa-solid fa-check"></i> Copied!</div>
 
-    <script type="module">
-      import { flatten } from "./src/logic/flatten.js";
-      import { generateSchema } from "./src/logic/scanner.js";
-      import {
-        toOptionalChain,
-        toJSONPath,
-        toLodash,
-        toDestructure,
-      } from "./src/logic/pathgen.js";
-      import { VirtualTree } from "./src/components/tree/virtualTree.js";
-      import {
-        setJson,
-        setSelectedNode,
-        loadPersistedState,
-        getState,
-        clearState,
-        subscribe,
-      } from "./src/logic/store.js";
-
-      // ── Globals exposed to inline handlers ──────────────────────────────────────
-      window.tree = null;
-      let _isMobile = window.innerWidth <= 768;
-      let currentTab = "tree";
-      let _schemaText = "";
-
-      // ── DOM refs ────────────────────────────────────────────────────────────────
-      const dropZone = document.getElementById("drop-zone");
-      const treePanel = document.getElementById("tree-panel");
-      const schemaPage = document.getElementById("schema-page");
-      const rightPanel = document.getElementById("right-panel");
-      const searchInput = document.getElementById("search-input");
-      const searchClear = document.getElementById("search-clear");
-      const pathDisplay = document.getElementById("path-display");
-      const valueDisplay = document.getElementById("value-display");
-      const valueTypeBadge = document.getElementById("value-type-badge-wrap");
-      const sidebarSchema = document.getElementById("sidebar-schema-output");
-      const schemaPageOut = document.getElementById("schema-output");
-      const schemaPageSub = document.getElementById("schema-page-sub");
-      const treeInfo = document.getElementById("tree-info");
-      const virtualScroll = document.getElementById("virtual-scroll");
-      const virtualSpacer = document.getElementById("virtual-spacer");
-      const vNodesContainer = document.getElementById("v-nodes-container");
-      const drawerOverlay = document.getElementById("drawer-overlay");
-      const panelToggle = document.getElementById("panel-toggle");
-
-      // ── Forward-declare window functions ───────────────────────────────────────
-      window.switchTab = (tab) => switchTab(tab);
-      window.triggerFile = () => triggerFile();
-      window.handleFileInput = (input) => handleFileInput(input);
-      window.onDragOver = (e) => onDragOver(e);
-      window.onDragLeave = () => onDragLeave();
-      window.onDrop = (e) => onDrop(e);
-      window.handleDropZoneClick = (e) => handleDropZoneClick(e);
-      window.parsePaste = () => parsePaste();
-      window.clearError = () => clearError();
-      window.loadSample = () => loadSample();
-      window.copySchema = () => copySchema();
-      window.onSearch = (val) => onSearch(val);
-      window.clearSearch = () => clearSearch();
-      window.clearAll = () => clearAll();
-      window.openPanel = () => openPanel();
-      window.closePanel = () => closePanel();
-      window.togglePanel = () => togglePanel();
-      window.copyText = (text, btn) => copyText(text, btn);
-
-      // ── Initialise virtual tree ─────────────────────────────────────────────────
-      window.tree = new VirtualTree({
-        scrollEl: virtualScroll,
-        spacerEl: virtualSpacer,
-        containerEl: vNodesContainer,
-        infoEl: treeInfo,
-        onSelect: onNodeSelect,
-      });
-
-      // ── Boot: restore persisted state ───────────────────────────────────────────
-      if (loadPersistedState()) {
-        const { json } = getState();
-        if (json !== null) {
-          initWithJson(json);
-        }
-      }
-
-      // ── State subscription ───────────────────────────────────────────────────────
-      subscribe((state) => {
-        const schemaTab = document.querySelector('.app-tab[data-tab="schema"]');
-        if (state.json !== null) {
-          showTreePanel();
-          if (schemaTab) {
-            schemaTab.style.opacity = "1";
-            schemaTab.style.pointerEvents = "auto";
-            schemaTab.style.cursor = "pointer";
-            schemaTab.title = "";
-          }
-        } else {
-          showDropZone();
-          if (schemaTab) {
-            schemaTab.style.opacity = "0.4";
-            schemaTab.style.pointerEvents = "none";
-            schemaTab.style.cursor = "not-allowed";
-            schemaTab.title = "Load JSON to enable Schema view";
-          }
-        }
-      });
-
-      // ── Tab switching ────────────────────────────────────────────────────────────
-      function switchTab(tab) {
-        if (tab === "schema") {
-          const { json } = getState();
-          if (json === null) return;
-        }
-        currentTab = tab;
-        document.querySelectorAll(".app-tab").forEach((t) => {
-          t.classList.toggle("active", t.dataset.tab === tab);
-        });
-
-        // Hide all panels
-        treePanel.classList.remove("visible");
-        schemaPage.style.display = "none";
-
-        const { json } = getState();
-
-        if (tab === "tree") {
-          if (json !== null) treePanel.classList.add("visible");
-          else dropZone.classList.remove("hidden");
-        } else if (tab === "schema") {
-          schemaPage.style.display = "block";
-        }
-      }
-
-      // ── Show/hide panels ─────────────────────────────────────────────────────────
-      function showDropZone() {
-        dropZone.classList.remove("hidden");
-        treePanel.classList.remove("visible");
-        panelToggle.style.display = "none";
-      }
-
-      function showTreePanel() {
-        dropZone.classList.add("hidden");
-        if (currentTab === "tree") {
-          treePanel.classList.add("visible");
-        }
-        panelToggle.style.display = "";
-      }
-
-      // ── File handling ─────────────────────────────────────────────────────────────
-      function triggerFile() {
-        document.getElementById("file-input").click();
-      }
-
-      function handleFileInput(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => parseRaw(e.target.result);
-        reader.readAsText(file);
-        input.value = "";
-      }
-
-      function onDragOver(e) {
-        e.preventDefault();
-        dropZone.classList.add("drag-over");
-      }
-      function onDragLeave() {
-        dropZone.classList.remove("drag-over");
-      }
-      function onDrop(e) {
-        e.preventDefault();
-        dropZone.classList.remove("drag-over");
-        const file = e.dataTransfer.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => parseRaw(ev.target.result);
-        reader.readAsText(file);
-      }
-      function handleDropZoneClick(e) {
-        if (
-          e.target === dropZone ||
-          e.target.closest(".drop-icon") ||
-          e.target.closest(".drop-title") ||
-          e.target.closest(".drop-sub")
-        ) {
-          triggerFile();
-        }
-      }
-
-      function parsePaste() {
-        const text = document.getElementById("paste-area").value.trim();
-        if (!text) return;
-        parseRaw(text);
-      }
-
-      function parseRaw(text) {
-        try {
-          const json = JSON.parse(text);
-          setJson(json, text);
-          initWithJson(json);
-          // Switch to tree tab
-          switchTab("tree");
-        } catch (err) {
-          const msg = "Parse Error: " + err.message;
-          showError(msg);
-        }
-      }
-
-      function showError(msg) {
-        const el = document.getElementById("error-msg");
-        el.textContent = msg;
-        el.style.display = "block";
-        setTimeout(() => (el.style.display = "none"), 5000);
-      }
-
-      function clearError() {
-        document.getElementById("error-msg").style.display = "none";
-      }
-
-      // ── Init with JSON ────────────────────────────────────────────────────────────
-      function initWithJson(json) {
-        window.tree.load(json);
-        _schemaText = generateSchema(json, "Root");
-        renderSchema(_schemaText);
-        showTreePanel();
-        resetPathPanel();
-      }
-
-      // ── Sample data ───────────────────────────────────────────────────────────────
-      function loadSample() {
-        const sample = {
-          user: {
-            id: 1042,
-            name: "Alice Nakamura",
-            email: "alice@example.com",
-            role: "admin",
-            active: true,
-            preferences: {
-              theme: "dark",
-              language: "en-US",
-              notifications: true,
-              dashboard: {
-                layout: "grid",
-                widgets: ["activity", "stats", "calendar"],
-              },
-            },
-          },
-          session: {
-            token: "eyJhbGciOiJIUzI1NiJ9.abc123",
-            expires_at: "2025-12-31T23:59:59Z",
-            ip_address: "192.168.1.1",
-            device: "MacBook Pro / Chrome 120",
-          },
-          permissions: ["read", "write", "admin", "audit"],
-          metadata: {
-            version: "2.1.0",
-            last_updated: "2025-06-01",
-            flags: {
-              beta_features: false,
-              two_factor: true,
-              api_access: null,
-              rate_limit: 1000,
-            },
-          },
-          audit_log: [
-            {
-              action: "login",
-              timestamp: "2025-06-01T10:00:00Z",
-              success: true,
-              ip: "192.168.1.1",
-            },
-            {
-              action: "update_profile",
-              timestamp: "2025-06-02T15:30:00Z",
-              success: true,
-              ip: "192.168.1.2",
-            },
-            {
-              action: "failed_auth",
-              timestamp: "2025-06-03T09:15:00Z",
-              success: false,
-              ip: "10.0.0.1",
-            },
-          ],
-        };
-        const raw = JSON.stringify(sample, null, 2);
-        setJson(sample, raw);
-        initWithJson(sample);
-        switchTab("tree");
-      }
-
-      // ── Node selection ────────────────────────────────────────────────────────────
-      function onNodeSelect(node) {
-        setSelectedNode(node);
-        updatePathPanel(node);
-        updateValuePanel(node);
-
-        // Dynamic schema
-        const schemaName =
-          node.key === "Root" || !node.key ? "Root" : pascal(node.key);
-        _schemaText = generateSchema(node.value, schemaName);
-        renderSchema(_schemaText);
-
-        // On mobile: auto-open drawer - some users might find this intrusive, so, commented out for now
-        // if (window.innerWidth <= 768) {
-        //   openPanel();
-        // }
-      }
-
-      function pascal(str) {
-        return String(str)
-          .replace(/[-_\s]+(.)/g, (_, c) => c.toUpperCase())
-          .replace(/^(.)/, (c) => c.toUpperCase());
-      }
-
-      function resetPathPanel() {
-        pathDisplay.innerHTML =
-          '<div class="path-empty"><i class="fa-solid fa-hand-pointer fa-xs"></i> Select a node in the tree</div>';
-        valueDisplay.innerHTML =
-          '<div class="value-empty">No node selected</div>';
-        valueTypeBadge.innerHTML = "";
-
-        // Reset schema to full if possible
-        const { json } = getState();
-        if (json) {
-          _schemaText = generateSchema(json, "Root");
-          renderSchema(_schemaText);
-        }
-      }
-
-      // ── Path panel ────────────────────────────────────────────────────────────────
-      function updatePathPanel(node) {
-        const path = node.path;
-        const oc = toOptionalChain(path);
-        const jp = toJSONPath(path);
-        const lo = toLodash(path);
-        const ds = toDestructure(path);
-
-        pathDisplay.innerHTML = `
-      <div class="path-variants">
-        ${makeVariant("Optional Chain", oc)}
-        ${makeVariant("JSONPath", jp)}
-        ${makeVariant("Lodash get()", lo)}
-        ${makeVariant("Destructure", ds)}
-      </div>`;
-      }
-
-      function makeVariant(label, code) {
-        const escaped = escHtml(code);
-        return `<div class="path-variant">
-      <div class="path-variant-label">${label}</div>
-      <div class="path-variant-code">
-        <span class="code-text">${escaped}</span>
-        <button class="copy-mini" onclick="copyText(${JSON.stringify(code)}, this)">
-          <i class="fa-regular fa-copy"></i>
-        </button>
-      </div>
-    </div>`;
-      }
-
-      // ── Value panel ───────────────────────────────────────────────────────────────
-      function updateValuePanel(node) {
-        const typeClass =
-          {
-            string: "badge-string",
-            number: "badge-number",
-            boolean: "badge-boolean",
-            object: "badge-object",
-            array: "badge-array",
-            null: "badge-null",
-          }[node.type] || "badge-object";
-
-        valueTypeBadge.innerHTML = `<span class="value-type-badge ${typeClass}">${node.type.toUpperCase()}</span>`;
-
-        let html;
-        if (node.isLeaf) {
-          const colVar =
-            {
-              string: "--str",
-              number: "--num",
-              boolean: "--bool",
-              null: "--null-col",
-            }[node.type] || "--text";
-          const display =
-            node.type === "string"
-              ? `"${escHtml(String(node.value))}"`
-              : String(node.value);
-          html = `<div class="value-content" style="color:var(${colVar})">${display}</div>`;
-        } else {
-          try {
-            const jsonStr = JSON.stringify(node.value, null, 2);
-            const preview =
-              jsonStr.length > 600 ? jsonStr.slice(0, 600) + "\n…" : jsonStr;
-            html = `<div class="value-content" style="color:var(--text-dim)">${escHtml(preview)}</div>`;
-          } catch {
-            html = `<div class="value-content">[Complex Object]</div>`;
-          }
-        }
-        valueDisplay.innerHTML = html;
-      }
-
-      // ── Schema rendering ──────────────────────────────────────────────────────────
-      function renderSchema(text) {
-        const highlighted = highlightSchema(text);
-        sidebarSchema.innerHTML = highlighted;
-        schemaPageOut.innerHTML = highlighted;
-        if (schemaPageSub) {
-          const count = (text.match(/^interface /gm) || []).length;
-          schemaPageSub.textContent = `${count} interface${count !== 1 ? "s" : ""} generated`;
-        }
-        const btn = document.getElementById("copy-schema-btn");
-        if (btn) btn.disabled = false;
-      }
-
-      function highlightSchema(text) {
-        return escHtml(text)
-          .replace(/\b(interface)\b/g, '<span class="schema-kw">$1</span>')
-          .replace(
-            /interface <span class="schema-kw">(\w+)<\/span>/g,
-            'interface <span class="schema-kw">$1</span>',
-          ) // fix double-wrap
-          .replace(
-            /interface (\w+)/g,
-            'interface <span class="schema-name">$1</span>',
-          )
-          .replace(
-            /: ([\w<>|()\[\] ]+);/g,
-            ': <span class="schema-type">$1</span>;',
-          )
-          .replace(/^  ([\w']+):/gm, '  <span class="schema-prop">$1</span>:')
-          .replace(/([{}])/g, '<span class="schema-brace">$1</span>')
-          .replace(/\/\/.*/g, '<span style="color:var(--text-dim)">$&</span>');
-      }
-
-      function copySchema() {
-        if (!_schemaText) return;
-        navigator.clipboard
-          .writeText(_schemaText)
-          .then(() => showToast("Schema copied!"));
-      }
-
-      // ── Search ────────────────────────────────────────────────────────────────────
-      function onSearch(val) {
-        searchClear.classList.toggle("visible", val.length > 0);
-        window.tree && window.tree.setSearch(val);
-      }
-
-      function clearSearch() {
-        searchInput.value = "";
-        searchClear.classList.remove("visible");
-        window.tree && window.tree.setSearch("");
-        searchInput.focus();
-      }
-
-      // ── Clear all ─────────────────────────────────────────────────────────────────
-      function clearAll() {
-        clearState();
-        window.tree.load({}); // reset internal state
-        window.tree.allNodes = [];
-        window.tree.visibleNodes = [];
-        _schemaText = "";
-        sidebarSchema.innerHTML =
-          '<span style="color:var(--text-dim);font-style:italic;">Load JSON to generate schema…</span>';
-        schemaPageOut.innerHTML =
-          '<span style="color:var(--text-dim);font-style:italic;">// Schema will appear here once JSON is loaded…</span>';
-        searchInput.value = "";
-        searchClear.classList.remove("visible");
-        resetPathPanel();
-        document.getElementById("paste-area").value = "";
-        switchTab("tree");
-        showDropZone();
-      }
-
-      // ── Mobile drawer ─────────────────────────────────────────────────────────────
-      function openPanel() {
-        rightPanel.classList.add("open");
-        drawerOverlay.classList.add("open");
-      }
-      function closePanel() {
-        rightPanel.classList.remove("open");
-        drawerOverlay.classList.remove("open");
-      }
-      function togglePanel() {
-        if (rightPanel.classList.contains("open")) {
-          closePanel();
-        } else {
-          openPanel();
-        }
-      }
-
-      // ── Keyboard shortcuts ────────────────────────────────────────────────────────
-      document.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-          e.preventDefault();
-          if (currentTab !== "tree") switchTab("tree");
-          searchInput.focus();
-        }
-        if ((e.ctrlKey || e.metaKey) && e.key === "/") {
-          e.preventDefault();
-          window.tree && window.tree.collapseAll();
-        }
-        if (e.key === "Escape") {
-          searchInput.blur();
-          closePanel();
-        }
-      });
-
-      // ── Resize ────────────────────────────────────────────────────────────────────
-      window.addEventListener("resize", () => {
-        _isMobile = window.innerWidth <= 768;
-        if (!_isMobile) closePanel();
-      });
-
-      // ── Copy helpers (exposed globally) ──────────────────────────────────────────
-      function copyText(text, btn) {
-        navigator.clipboard.writeText(text).then(() => {
-          if (btn) {
-            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-            btn.classList.add("copied");
-            setTimeout(() => {
-              btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
-              btn.classList.remove("copied");
-            }, 1500);
-          }
-          showToast("Path copied!");
-        });
-      }
-
-      // ── Toast ─────────────────────────────────────────────────────────────────────
-      let _toastTimeout;
-      window.showToast = function (msg) {
-        const t = document.getElementById("toast");
-        t.innerHTML = `<i class="fa-solid fa-check"></i> ${msg}`;
-        t.classList.add("show");
-        clearTimeout(_toastTimeout);
-        _toastTimeout = setTimeout(() => t.classList.remove("show"), 2200);
-      };
-
-      // ── Utilities ─────────────────────────────────────────────────────────────────
-      function escHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-    </script>
+    <script type="module" src="src/app.js"></script>
   </body>
 </html>
