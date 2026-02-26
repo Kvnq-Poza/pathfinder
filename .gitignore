@@ -2,3 +2,5 @@ ogrite.config.ts
 .DS_Store
 node_modules
 public/og
+package-lock.json
+package.json
