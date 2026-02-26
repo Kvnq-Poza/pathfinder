@@ -52,18 +52,10 @@
         </li>
       </ul>
       <div class="nav-cta">
-        <button
-          class="btn-primary"
-          onclick="window.location.href = 'tool.html'"
-        >
+        <button class="btn-primary">
           Launch Tool <i class="fa-solid fa-arrow-right"></i>
         </button>
-        <button
-          class="ham-btn"
-          id="ham-btn"
-          aria-label="Menu"
-          onclick="toggleMobileMenu()"
-        >
+        <button class="ham-btn" id="ham-btn" aria-label="Menu">
           <i class="fa-solid fa-bars"></i>
         </button>
       </div>
@@ -76,7 +68,6 @@
         >GitHub</a
       >
       <button
-        onclick="window.location.href = 'tool.html'"
         class="btn-primary"
         style="margin-top: 8px; width: 100%; justify-content: center"
       >
@@ -100,20 +91,10 @@
           seconds.
         </p>
         <div class="hero-actions" style="animation: fadeUp 0.6s 0.3s ease both">
-          <button
-            class="btn-launch"
-            onclick="window.location.href = 'tool.html'"
-          >
+          <button class="btn-launch">
             <i class="fa-solid fa-rocket"></i> Launch Tool
           </button>
-          <button
-            class="btn-ghost"
-            onclick="
-              document
-                .getElementById('features')
-                .scrollIntoView({ behavior: 'smooth' })
-            "
-          >
+          <button class="btn-ghost">
             <i class="fa-solid fa-circle-info"></i> Features
           </button>
         </div>
@@ -162,7 +143,6 @@
               <button
                 class="copy-mini"
                 id="demo-copy-btn"
-                onclick="copyDemoPath()"
                 style="display: none"
               >
                 <i class="fa-regular fa-copy"></i> copy
@@ -170,11 +150,7 @@
             </div>
 
             <!-- Root -->
-            <div
-              class="demo-node"
-              id="dn-root"
-              onclick="demoToggle('root', this)"
-            >
+            <div class="demo-node" id="dn-root">
               <i class="fa-solid fa-chevron-right demo-arrow" id="arr-root"></i>
               <span style="color: var(--key)">"root"</span>
               <span style="color: var(--text-dim)">:&nbsp;{…}&nbsp;</span>
@@ -184,12 +160,7 @@
             </div>
             <div id="demo-children" style="display: none">
               <!-- user -->
-              <div
-                class="demo-node"
-                id="dn-user"
-                style="padding-left: 20px"
-                onclick="demoToggle('user', this)"
-              >
+              <div class="demo-node" id="dn-user" style="padding-left: 20px">
                 <i
                   class="fa-solid fa-chevron-right demo-arrow"
                   id="arr-user"
@@ -201,11 +172,7 @@
                 >
               </div>
               <div id="demo-user-ch" style="display: none">
-                <div
-                  class="demo-node"
-                  style="padding-left: 36px"
-                  onclick="demoLeaf('root?.user?.id', this)"
-                >
+                <div>
                   <i
                     class="fa-solid fa-chevron-right demo-arrow leaf"
                     style="opacity: 0"
@@ -214,11 +181,7 @@
                   ><span style="color: var(--text-dim)">:&nbsp;</span
                   ><span style="color: var(--num)">42</span>
                 </div>
-                <div
-                  class="demo-node"
-                  style="padding-left: 36px"
-                  onclick="demoLeaf('root?.user?.name', this)"
-                >
+                <div>
                   <i
                     class="fa-solid fa-chevron-right demo-arrow leaf"
                     style="opacity: 0"
@@ -227,11 +190,7 @@
                   ><span style="color: var(--text-dim)">:&nbsp;</span
                   ><span style="color: var(--str)">"Alice"</span>
                 </div>
-                <div
-                  class="demo-node"
-                  style="padding-left: 36px"
-                  onclick="demoLeaf('root?.user?.role', this)"
-                >
+                <div>
                   <i
                     class="fa-solid fa-chevron-right demo-arrow leaf"
                     style="opacity: 0"
@@ -241,13 +200,9 @@
                   ><span style="color: var(--str)">"admin"</span>
                 </div>
               </div>
+
               <!-- tags -->
-              <div
-                class="demo-node"
-                id="dn-tags"
-                style="padding-left: 20px"
-                onclick="demoToggle('tags', this)"
-              >
+              <div class="demo-node" id="dn-tags" style="padding-left: 20px">
                 <i
                   class="fa-solid fa-chevron-right demo-arrow"
                   id="arr-tags"
@@ -286,6 +241,7 @@
                   ><span style="color: var(--str)">"parser"</span>
                 </div>
               </div>
+
               <!-- version -->
               <div
                 class="demo-node"
@@ -397,84 +353,6 @@
 
     <div id="toast"><i class="fa-solid fa-check"></i> Copied!</div>
 
-    <script>
-      // Dynamic footer year
-      document.getElementById("footer-year").textContent =
-        new Date().getFullYear();
-
-      // Mobile menu
-      function toggleMobileMenu() {
-        const m = document.getElementById("mobile-menu");
-        m.classList.toggle("open");
-      }
-      // Close menu on outside click
-      document.addEventListener("click", (e) => {
-        if (
-          !e.target.closest("#mobile-menu") &&
-          !e.target.closest("#ham-btn")
-        ) {
-          document.getElementById("mobile-menu").classList.remove("open");
-        }
-      });
-
-      // Demo tree state
-      const demoExpanded = { root: false, user: false, tags: false };
-      const childMap = {
-        root: "demo-children",
-        user: "demo-user-ch",
-        tags: "demo-tags-ch",
-      };
-      const arrowMap = { root: "arr-root", user: "arr-user", tags: "arr-tags" };
-
-      function demoToggle(id, el) {
-        demoExpanded[id] = !demoExpanded[id];
-        document.getElementById(childMap[id]).style.display = demoExpanded[id]
-          ? "block"
-          : "none";
-        const arr = document.getElementById(arrowMap[id]);
-        if (arr)
-          arr.className =
-            "fa-solid fa-chevron-right demo-arrow" +
-            (demoExpanded[id] ? " open" : "");
-        highlightDemo(el);
-        // Also show path for container
-        const paths = { root: "root", user: "root?.user", tags: "root?.tags" };
-        setDemoPath(paths[id]);
-      }
-
-      function demoLeaf(path, el) {
-        highlightDemo(el);
-        setDemoPath(path);
-      }
-
-      function highlightDemo(el) {
-        document
-          .querySelectorAll(".demo-node")
-          .forEach((n) => n.classList.remove("active"));
-        el.classList.add("active");
-      }
-
-      function setDemoPath(path) {
-        const t = document.getElementById("demo-path-text");
-        t.style.fontStyle = "normal";
-        t.style.color = "var(--accent)";
-        t.innerHTML = path;
-        document.getElementById("demo-copy-btn").style.display = "inline-flex";
-      }
-
-      function copyDemoPath() {
-        const text = document.getElementById("demo-path-text").textContent;
-        navigator.clipboard
-          .writeText(text)
-          .then(() => showToast("Path copied!"));
-      }
-
-      function showToast(msg) {
-        const t = document.getElementById("toast");
-        t.innerHTML = '<i class="fa-solid fa-check"></i> ' + msg;
-        t.classList.add("show");
-        setTimeout(() => t.classList.remove("show"), 2000);
-      }
-    </script>
+    <script src="src/home.js"></script>
   </body>
 </html>
