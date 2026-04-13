@@ -7,7 +7,7 @@
   "author": "Kvnq Poza",
   "homepage_url": "https://pathfinder.js.org/",
   "offline_enabled": true,
-  "permissions": ["activeTab", "scripting", "storage", "contextMenus"],
+  "permissions": ["activeTab", "storage", "contextMenus"],
 
   "action": {
     "default_title": "PathFinder - Visual JSON Explorer",
